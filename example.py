@@ -1,6 +1,7 @@
 from coco2voc import *
 from PIL import Image
 
+
 def on_press(event):
     """
     Keyboard interaction ,key `a` for next image, key `d` for previous image, key `t` segmentation toggle
@@ -10,11 +11,11 @@ def on_press(event):
     global i, l, frames, segs, fplot, splot, fig, ax, s_toggle, id_list, figsizes
 
     if event.key == 'd':
-        i = (i+1) % l
+        i = (i + 1) % l
         s_toggle = True
         splot.set_alpha(0.4)
     elif event.key == 'a':
-        i = (i-1) % l
+        i = (i - 1) % l
         s_toggle = True
         splot.set_alpha(0.4)
     elif event.key == 't':
@@ -32,15 +33,39 @@ def on_press(event):
     pass
 
 
+def delete_folders(*folder_path):
+    for folder in folder_path:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+
+
+def create_folders(*folders):
+    for folder in folders:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+
 if __name__ == '__main__':
     # !!Change paths to your local machine!!
-    annotations_file = '/home/dl/1TB-Volumn/MSCOCO2017/annotations/instances_train2017.json'
-    labels_target_folder = '/home/dl/PycharmProjects/coco2voc-master/output'
-    data_folder = '/home/dl/1TB-Volumn/MSCOCO2017/train2017'
+    # ---------kkuhn-block------------------------------ updated path
+    annotations_file = "D:\download\DatasetId_1641292_1661084286\DatasetId_1641292_1661084286\Annotations\coco_info.json"
+    labels_target_folder = 'D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass'
+    original_images_folder = 'd:\download\DatasetId_1641292_1661084286\DatasetId_1641292_1661084286\Images'
+    images_target_folder = 'D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages'
+    # ---------kkuhn-block------------------------------
 
+    # # ---------kkuhn-block------------------------------  original path
+    # annotations_file = '/home/dl/1TB-Volumn/MSCOCO2017/annotations/instances_train2017.json'
+    # labels_target_folder = '/home/dl/PycharmProjects/coco2voc-master/output'
+    # original_images_folder = '/home/dl/1TB-Volumn/MSCOCO2017/train2017'
+    # # ---------kkuhn-block------------------------------
+
+    delete_folders(labels_target_folder, images_target_folder)
+    create_folders(labels_target_folder, images_target_folder)
 
     # Convert n=25 annotations
-    coco2voc(annotations_file, labels_target_folder, n=25, compress=True)
+    coco2voc(annotations_file, labels_target_folder, images_target_folder, original_images_folder, compress=True)  # kuhn edited
+    # coco2voc(annotations_file, labels_target_folder, n=25, compress=True)
 
     # Load an image with it's id segmentation and show
     coco = COCO(annotations_file)
@@ -53,7 +78,7 @@ if __name__ == '__main__':
     i = 0
     l = len(id_list)
     frames = []
-    segs =[]
+    segs = []
     figsizes = []
     s_toggle = True
     dpi = 100
@@ -63,32 +88,31 @@ if __name__ == '__main__':
         img_ann = coco.loadImgs(int(id))
 
         file_name = img_ann[0]['file_name']
-        im_data = plt.imread(os.path.join(data_folder, file_name))
+        im_data = plt.imread(os.path.join(original_images_folder, file_name))
         height, width, depth = im_data.shape
         frames.append(im_data)
 
-        size = width/float(dpi), height/float(dpi)
+        size = width / float(dpi), height / float(dpi)
         figsizes.append(size)
 
         # Load segmentation - note that the loaded '.npz' file is a dictionary, and the data is at key 'arr_0'
-        id_seg = np.load(os.path.join(labels_target_folder, 'id_labels', id +'.npz'))
+        id_seg = np.load(os.path.join(labels_target_folder, 'id_labels', id + '.npz'))
         segs.append(id_seg['arr_0'])
-        
+
         # Example for loading class or instance segmentations
-        instance_filename = os.path.join(labels_target_folder, 'instance_labels', id +'.png')
-        class_filename = os.path.join(labels_target_folder, 'class_labels', id +'.png')
+        instance_filename = os.path.join(labels_target_folder, 'instance_labels', id + '.png')
+        class_filename = os.path.join(labels_target_folder, 'class_labels', id + '.png')
         instance_seg = np.array(Image.open(instance_filename))
         class_seg = np.array(Image.open(class_filename))
-
 
     # Show image with segmentations
     fig, ax = plt.subplots(figsize=figsizes[0], dpi=dpi)
     fig.canvas.mpl_connect('key_press_event', on_press)
 
-    fplot = ax.imshow(frames[i%l])
-    splot = ax.imshow(segs[i%l], alpha=0.4)
+    fplot = ax.imshow(frames[i % l])
+    splot = ax.imshow(segs[i % l], alpha=0.4)
 
-    ax.set_aspect(aspect='auto')# must after imshow
+    ax.set_aspect(aspect='auto')  # must after imshow
 
     plt.tight_layout()
     plt.axis('off')
