@@ -49,16 +49,11 @@ if __name__ == '__main__':
     # !!Change paths to your local machine!!
     # ---------kkuhn-block------------------------------ updated path
     annotations_file = "D:\download\DatasetId_1641292_1661084286\DatasetId_1641292_1661084286\Annotations\coco_info.json"
-    labels_target_folder = 'D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass'
     original_images_folder = 'd:\download\DatasetId_1641292_1661084286\DatasetId_1641292_1661084286\Images'
+    labels_target_folder = 'D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass'
     images_target_folder = 'D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages'
     # ---------kkuhn-block------------------------------
 
-    # # ---------kkuhn-block------------------------------  original path
-    # annotations_file = '/home/dl/1TB-Volumn/MSCOCO2017/annotations/instances_train2017.json'
-    # labels_target_folder = '/home/dl/PycharmProjects/coco2voc-master/output'
-    # original_images_folder = '/home/dl/1TB-Volumn/MSCOCO2017/train2017'
-    # # ---------kkuhn-block------------------------------
 
     delete_folders(labels_target_folder, images_target_folder)
     create_folders(labels_target_folder, images_target_folder)

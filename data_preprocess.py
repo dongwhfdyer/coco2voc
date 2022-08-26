@@ -2,6 +2,7 @@ import glob
 import os
 import random
 import shutil
+import time
 from pathlib import Path
 
 from PIL import Image
@@ -10,19 +11,6 @@ import matplotlib.image as mi
 import matplotlib.pyplot as plt
 import numpy as np
 import png  # https://pypng.readthedocs.io/en/latest/
-
-
-# 使用PIL库生成调色板格式的图
-def Convert_Palette(img_png, label_img):
-    png_data = png.Reader(label_img)
-    # print(png_data.read()) 这里可以获取该png图片的信息(tuple格式储存的)，如果是调色板图片，还可以获取调色板
-    voc_palette = png_data.read()[3]['palette']  # 得到voc的label的调色板(list形式储存的)
-    palette = np.array(voc_palette)  # 256*3
-    palette = palette.reshape(256, 1, 3).astype(np.uint8)  # 256*1*3 把int32改成uint8(opencv中储存图像的数据格式 0 - 256)
-
-    out_img = Image.open(img_png)
-    out_img.putpalette(palette)  # 就是以刚刚得到的调色板将图片转换为调色板模式的伪彩图
-    out_img.save('rubb/rubb.png')  # 保存为png格式的伪彩图
 
 
 def read_voc_segmentation_label_img():
@@ -34,8 +22,11 @@ def read_voc_segmentation_label_img():
     # Convert_Palette(original_img_path, label_img_path)
 
 
-def rubb_colormap():
-    # "
+def visual_colormap():
+    """
+    It's used for visualizing the color map of the segmentation result.
+    :return:
+    """
     img_path = r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass\class_labels\0001.png"
     ss = Image.open(img_path)
     # ss = Image.open('rubb/rubb.png')
@@ -48,13 +39,6 @@ def rubb_colormap():
     visualimg.putpalette(palette)
     vis_name = "rubb/rubb_1.png"
     visualimg.save(vis_name, format='PNG')
-
-    # files = [
-    #         'SegmentationObject/2007_000129.png',
-    #         'SegmentationClass/2007_000129.png',
-    #         'SegmentationClassRaw/2007_000129.png', # processed by _remove_colormap()
-    #                                                 # in captainst's answer...
-    #         ]
 
     print('\nfile: {}\nanno: {}\nimg info: {}'.format(
         img_path, set(ss_numpy.flatten()), ss))
@@ -77,15 +61,22 @@ def train_val_split():
             f.write(line)
 
 
-def extract_pig_face_mask():
-    images_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages")
-    seg_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass")
+def extract_pig_face_mask(imgs_folder, segs_folder, new_imgs_folder):
+    """
+    It will extract the mask of the pig face from the original image, and save it in a new folder.
+    :return:
+    """
+    # images_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages")
+    # seg_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\SegmentationClass")
+    # new_img_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages_pig_face")
 
-    new_img_folder = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages_pig_face")
+    imgs_folder = Path(imgs_folder)
+    segs_folder = Path(segs_folder)
+    new_imgs_folder = Path(new_imgs_folder)
 
-    for img_path in images_folder.glob("*.jpg"):
+    for img_path in imgs_folder.glob("*.jpg"):
         img_name = img_path.name
-        seg_path = seg_folder / (img_name.replace(".jpg", ".png"))
+        seg_path = segs_folder / (img_name.replace(".jpg", ".png"))
         if seg_path.exists():
             img = cv2.imread(str(img_path))
             seg = cv2.imread(str(seg_path), cv2.IMREAD_GRAYSCALE)
@@ -99,10 +90,26 @@ def extract_pig_face_mask():
             # resize the pig face
             # img = cv2.resize(img, (256, 256))
             # save the pig face
-            new_img_path = new_img_folder / img_name
+            new_img_path = new_imgs_folder / img_name
             cv2.imwrite(str(new_img_path), img)
 
-            # cv2.imwrite(str(new_img_folder / img_name), img)
+
+def extractPigFaceFor_new_agg_face_only_folder():
+    new_agg_face_only_folder_path = Path(r"d:\ANewspace\code\pig_face_weight_correlation\datasets\new_agg_face_only")
+    exact_face_folder = Path(r"d:\ANewspace\code\pig_face_weight_correlation\datasets\exact_face_only")
+    delete_folders(exact_face_folder)
+    create_folders(exact_face_folder)
+    for id_folder in new_agg_face_only_folder_path.iterdir():
+        exactFace_id_folder = exact_face_folder / id_folder.name
+        create_folders(exactFace_id_folder)
+        for img_path in id_folder.glob("*"):
+            img_name = img_path.name
+            img = cv2.imread(str(img_path))
+            img_gray = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+            x, y, w, h = cv2.boundingRect(img_gray)
+            img = img[y:y + h, x:x + w]
+            new_img_path = exactFace_id_folder / img_name
+            cv2.imwrite(str(new_img_path), img)
 
 
 def delete_folders(*folder_path):
@@ -117,8 +124,12 @@ def create_folders(*folders):
             os.makedirs(folder)
 
 
-
 def selected_600_pig_face():
+    """
+    It is used for pig face landmark detection. I prepared 600 pig face images for the detection.
+    It will select 600 pig face images from the original image folder.
+    :return:
+    """
     old_path = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\JPEGImages_pig_face")
     new_path = Path(r"D:\ANewspace\code\deeplabv3-plus-pytorch\datasets\pighead\pig_face_600")
     delete_folders(new_path)
@@ -131,10 +142,12 @@ def selected_600_pig_face():
         shutil.copy(str(old_path / path), str(new_path / path))
 
 
+
 if __name__ == '__main__':
     # read_voc_segmentation_label_img()
     # rubb_colormap()
     # train_val_split()
     # extract_pig_face_mask()
-    selected_600_pig_face()
-
+    # selected_600_pig_face()
+    extractPigFaceFor_new_agg_face_only_folder()
+    pass
