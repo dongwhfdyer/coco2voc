@@ -142,6 +142,83 @@ def selected_600_pig_face():
         shutil.copy(str(old_path / path), str(new_path / path))
 
 
+def rubb_tackle_x_ray_object_dataset():
+    # old path
+    old_path = Path(r"D:\download\OPIXray")
+    train_path = old_path / "train"
+    train_imgs_path = train_path / "train_image"
+    train_annos_path = train_path / "train_annotation"
+    test_path = old_path / "test"
+    test_imgs_path = test_path / "test_image"
+    test_annos_path = test_path / "test_annotation"
+
+    # new path
+    new_path = Path(r"rubb/opixray_yolo")
+    new_train_path = new_path / "train"
+    new_train_imgs_path = new_train_path / "images"
+    new_train_labels_path = new_train_path / "labels"
+    new_test_path = new_path / "test"
+    new_test_imgs_path = new_test_path / "images"
+    new_test_labels_path = new_test_path / "labels"
+
+    delete_folders(new_train_path, new_test_path)
+    create_folders(new_train_imgs_path, new_train_labels_path, new_test_imgs_path, new_test_labels_path)
+    obj_id_class = {'Straight_Knife': 0, 'Folding_Knife': 1, 'Scissor': 2, 'Utility_Knife': 3, 'Multi-tool_Knife': 4}
+
+    def tackle_one_dataset(img_folder, anno_folder, new_img_folder, new_anno_folder):
+        for img_path in img_folder.glob("*.jpg"):
+            img_name = img_path.name
+            anno_path = anno_folder / (img_name.replace(".jpg", ".txt"))
+            anno_file_handle = open(str(anno_path), 'r')
+            anno_info = anno_file_handle.readlines()
+            new_anno_file_handle = open(str(new_anno_folder / (img_name.replace(".jpg", ".txt"))), 'w')
+            for line in anno_info:
+                img_name, obj, x1, y1, x2, y2 = line.split()
+
+                img = cv2.imread(str(img_path))
+                # get img_width and img_height
+                img_width = img.shape[1]
+                img_height = img.shape[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                # bounding box width and height
+                w = x2 - x1
+                h = y2 - y1
+                # center point of the bounding box
+                cx = x1 + w / 2
+                cy = y1 + h / 2
+                # normalized center point
+                nx = cx / img_width
+                ny = cy / img_height
+                # normalized width and height
+                nw = w / img_width
+                nh = h / img_height
+                # saving two decimal places
+                nx = round(nx, 4)
+                ny = round(ny, 4)
+                nw = round(nw, 4)
+                nh = round(nh, 4)
+
+                new_anno_file_handle.write(str(obj_id_class[obj]) + " " + str(nx) + " " + str(ny) + " " + str(nw) + " " + str(nh) + "\n")
+
+                # x1, y1, x2, y2 = x1 / img_width, y1 / img_height, x2 / img_width, y2 / img_height
+
+                # # ---------kkuhn-block------------------------------ # draw
+                # img = cv2.imread(str(img_path))
+                # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # cv2.imshow("img", img)
+                # cv2.waitKey(0)
+                # # ---------kkuhn-block------------------------------
+            anno_file_handle.close()
+            new_anno_file_handle.close()
+            shutil.copyfile(str(img_path), str(new_img_folder / img_name))
+            pass
+
+    tackle_one_dataset(train_imgs_path, train_annos_path, new_train_imgs_path, new_train_labels_path)
+    tackle_one_dataset(test_imgs_path, test_annos_path, new_test_imgs_path, new_test_labels_path)
+
+    pass
+    # test
+
 
 if __name__ == '__main__':
     # read_voc_segmentation_label_img()
@@ -149,5 +226,6 @@ if __name__ == '__main__':
     # train_val_split()
     # extract_pig_face_mask()
     # selected_600_pig_face()
-    extractPigFaceFor_new_agg_face_only_folder()
+    # extractPigFaceFor_new_agg_face_only_folder()
+    rubb_tackle_x_ray_object_dataset()
     pass
